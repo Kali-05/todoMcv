@@ -10,6 +10,13 @@ class TodoItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+       decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: Colors.blue.withOpacity(0.3),
+            ),
+          ),
       margin: EdgeInsets.only(bottom: 20),
    child: ListTile(
       onTap: (){

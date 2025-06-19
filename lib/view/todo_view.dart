@@ -1,31 +1,27 @@
 
 
-import 'dart:ffi';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:todo_m_cv/controller/todo_controller.dart';
 import 'package:todo_m_cv/model/todo.dart';
+import 'package:todo_m_cv/provider/todo_provide.dart';
 import 'package:todo_m_cv/widgets/todo_item.dart';
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../widgets/searchBox.dart';
+
 
 
 class TodoView extends StatefulWidget {
   const TodoView({super.key});
 
-  @override
+ @override
   State<TodoView> createState() => _TodoViewState();
 }
 
 class _TodoViewState extends State<TodoView> {
-  final todosList = Todo.todoList();
-  final _controller = TextEditingController();
-  @override
-    void initState() {
-    super.initState();
-    loadTodos();
-   }
-
+  
+  
+  
   @override
   Widget build(BuildContext context) {
     
@@ -47,113 +43,97 @@ class _TodoViewState extends State<TodoView> {
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: typeBox(_controller),
+            child: typeBox(),
           )
         ],
       ),
     );
   }
 
-  // void _handleTodoCHange(Todo todo) {
-  //   setState(() {
-  //     todo.isDone = !todo.isDone;
-  //   });
-  // }
-   void _handleTodoCHange(Todo todo) {
-    setState(() {
-      todo.isDone = !todo.isDone;
-    });
-    saveTodos();
-   }
+  
+  
+   
 
-   void _deleteTodoItem(String id) {
-    setState(() {
-      todosList.removeWhere((item) => item.id == id);
-    });
-    saveTodos();
-    }
-
-
-    void addTodoItem(String todo) {
-    setState(() {
-      todosList.add(Todo(id: DateTime.now().millisecondsSinceEpoch.toString(), todoText: todo));
-    });
-    _controller.clear();
-    saveTodos();}
-    
-  void loadTodos() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? todosString = prefs.getString('todos');
-    if (todosString != null) {
-      final List decoded = json.decode(todosString);
-      setState(() {
-        todosList.clear();
-        todosList.addAll(decoded.map((e) => Todo.fromJson(e)).toList());
-      });
-    }
-  }
-
-  void saveTodos() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String encoded = json.encode(todosList.map((e) => e.toJson()).toList());
-    await prefs.setString('todos', encoded);
-  }
-
-  Widget typeBox(TextEditingController _controller) {
-    return Row(children: [
+  Widget typeBox( ) {
+    return Consumer<TodoProvider>(
+      builder: (context, todoProvider, child) {
+      return Row(children: [
+                
+      
               Expanded(
-                child:Container(
+                child: Container(
                   margin: EdgeInsets.only(left: 15, right: 15, bottom: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
+                  child: ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 20,vertical: 5),
-                  child: TextField(
-                    controller: _controller,
-                    decoration: InputDecoration(
-                      hintText: 'add new todo',
-                      border: InputBorder.none
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.blue.withOpacity(0.3),
+                          ),
+                        ),
+                        child: TextField(
+                          controller: todoProvider.textController,
+                          style: TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: 'Add new todo',
+                            hintStyle: TextStyle(color: Colors.blue),
+                            border: InputBorder.none,
+                          ),
+                          onSubmitted: (value) {
+                        TodoController.addTodoItem(context, value);
+                      },
+                        ),
+                      ),
                     ),
                   ),
-                ) 
+                ),
               ),
-              Container(
-                margin: EdgeInsets.only(right: 20, bottom: 20),
-                child: ElevatedButton(
-                  onPressed: (){
-                    addTodoItem(_controller.text);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    shape: CircleBorder(),
-                    padding: EdgeInsets.all(20),
-                    backgroundColor: Colors.red, // Background color
-                ), child: Text("+",style: TextStyle(fontSize: 40),),),
-              )
-            ],);
+      
+                Container(
+                  margin: EdgeInsets.only(right: 20, bottom: 20),
+                  child: ElevatedButton(
+                    onPressed: (){
+                      TodoController.addTodoItem(context, todoProvider.textController.text);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      shape: CircleBorder(),
+                      padding: EdgeInsets.all(20),
+                      backgroundColor: Colors.blue, // Background color
+                  ), child: Text("+",style: TextStyle(fontSize: 40,),),),
+                )
+              ],);}
+    );
 
             
   }
 
   Widget taskTile() {
     return Expanded(
-                    child: ListView(
-                      children: [
-                        Container(
-                          margin: EdgeInsets.only(top: 20, bottom: 10),
-                          child: Text(
-                            'Todo List',
-                            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    child: Consumer<TodoProvider>(
+                      builder: (context, todoProvider, child) {
+                      return ListView(
+                        children: [
+                          Container(
+                            margin: EdgeInsets.only(top: 20, bottom: 10),
+                            child: Text(
+                              'Todo List',
+                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                            ),
                           ),
-                        ),
-                        for (Todo todoo in todosList)
-                          TodoItem(
-                            todo: todoo,
-                            onToChanged: _handleTodoCHange,
-                            onDeleteItem: _deleteTodoItem,
-                          ),
-                        
-                      ],
+                          for (Todo todoo in todoProvider.todosList)
+                            TodoItem(
+                              todo: todoo,
+                              onToChanged: (Todo todo) => TodoController.handleTodoCHange(context, todo),
+                  onDeleteItem: (String id) => TodoController.deleteTodoItem(context, id),
+                            ),
+                          
+                        ],
+                      );}
                     ),
                   );}
 }
